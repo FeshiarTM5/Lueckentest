@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lückentest · Deutsche Nachrichten</title>
+    <style>
+        :root {
+            --bg: #f4f6fa; --card: #ffffff; --text: #1e293b; --muted: #64748b;
+            --border: #e2e8f0; --panel: #f8fafc; --panel-border: #e2e8f0;
+            --input-bg: #ffffff; --input-border: #94a3b8; --input-text: #0f172a;
+            --btn2-bg: #e2e8f0; --btn2-hover: #cbd5e1; --btn2-text: #1e293b;
+            --correct-bg: #f0fdf4; --correct-border: #22c55e; --correct-text: #166534;
+            --incorrect-bg: #fef2f2; --incorrect-border: #ef4444; --incorrect-text: #991b1b;
+            --success-bg: #dcfce7; --success-border: #22c55e; --success-text: #14532d;
+            --shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+            --accent: #3b82f6; --accent-hover: #2563eb;
+        }
+        [data-theme="dark"] {
+            --bg: #333b4d; --card: #3d4659; --text: #e8edf5; --muted: #a9b3c6;
+            --border: #4b5568; --panel: #39425a; --panel-border: #4b5568;
+            --input-bg: #4a5570; --input-border: #6b7690; --input-text: #f1f5f9;
+            --btn2-bg: #4a5470; --btn2-hover: #566182; --btn2-text: #e8edf5;
+            --correct-bg: #1f4030; --correct-border: #22c55e; --correct-text: #86efac;
+            --incorrect-bg: #4a2020; --incorrect-border: #ef4444; --incorrect-text: #fca5a5;
+            --success-bg: #1a4030; --success-border: #22c55e; --success-text: #86efac;
+            --shadow: 0 20px 40px -12px rgba(0,0,0,0.45);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg); color: var(--text);
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; padding: 2rem 1rem;
+            transition: background-color 0.25s, color 0.25s;
+        }
+        .app {
+            max-width: 860px; width: 100%; background: var(--card);
+            border-radius: 20px; box-shadow: var(--shadow);
+            padding: 2rem 2.2rem; transition: background-color 0.25s, box-shadow 0.25s;
+        }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.25rem; }
+        h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+        h1 span { font-size: 1.7rem; }
+        .subtitle { font-size: 0.95rem; color: var(--muted); margin-top: 0.25rem; margin-bottom: 1.8rem; border-left: 4px solid var(--accent); padding-left: 0.85rem; }
+        .theme-btn {
+            flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px;
+            background: var(--btn2-bg); color: var(--btn2-text); font-size: 1.2rem;
+            padding: 0; display: flex; align-items: center; justify-content: center;
+            box-shadow: none; border: none; cursor: pointer;
+            transition: background-color 0.15s, transform 0.1s;
+        }
+        .theme-btn:hover { background: var(--btn2-hover); }
+        .theme-btn:active { transform: scale(0.94); }
+        #status {
+            font-size: 1rem; padding: 0.85rem 1rem; border-radius: 12px;
+            margin-bottom: 1.25rem; display: none; background: var(--panel);
+            color: var(--text); line-height: 1.5; font-weight: 500;
+        }
+        #status.error   { display: block; background: var(--incorrect-bg); color: var(--incorrect-text); border: 1px solid var(--incorrect-border); }
+        #status.loading { display: block; background: var(--panel); color: var(--accent); border: 1px solid var(--accent); }
+        #status.success { display: block; background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); }
+        #text-container {
+            font-size: 1.15rem; line-height: 2; color: var(--text);
+            background: var(--panel); border-radius: 14px; padding: 1.5rem 1.8rem;
+            min-height: 180px; border: 1px solid var(--panel-border);
+            word-break: break-word; white-space: pre-wrap;
+            margin-bottom: 1.75rem; transition: background-color 0.25s, border-color 0.25s;
+        }
+        .luecke { display: inline-block; vertical-align: baseline; margin: 0 2px; position: relative; }
+        .luecke input {
+            font: inherit; font-size: 1.05rem; padding: 0.15rem 0.35rem;
+            border: 2px solid var(--input-border); border-radius: 6px;
+            background: var(--input-bg); color: var(--input-text);
+            text-align: center; min-width: 4ch; max-width: 20ch; outline: none;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+        }
+        .luecke input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); }
+        .luecke input.correct   { border-color: var(--correct-border); background: var(--correct-bg); color: var(--correct-text); }
+        .luecke input.incorrect { border-color: var(--incorrect-border); background: var(--incorrect-bg); color: var(--incorrect-text); }
+        .luecke input:disabled  { opacity: 1; cursor: default; }
+        .expected {
+            display: block; font-size: 0.78rem; font-weight: 600;
+            color: var(--incorrect-text); background: var(--incorrect-bg);
+            border: 1px solid var(--incorrect-border); border-radius: 6px;
+            padding: 0.1rem 0.4rem; margin-bottom: 2px; text-align: center; white-space: nowrap;
+        }
+        .actions { display: flex; gap: 0.85rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+        button {
+            font: inherit; font-weight: 600; padding: 0.8rem 1.8rem;
+            border: none; border-radius: 12px; cursor: pointer;
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+        }
+        button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        #checkBtn { background: var(--accent); color: #ffffff; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35); }
+        #checkBtn:hover:not(:disabled) { background: var(--accent-hover); }
+        #newBtn { background: var(--btn2-bg); color: var(--btn2-text); }
+        #newBtn:hover:not(:disabled) { background: var(--btn2-hover); }
+        #scoreDisplay {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-left: 0.25rem;
+            white-space: nowrap;
+        }
+
+        /* ---------- Slider ---------- */
+        .sliders { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1rem; }
+        .slider-row { display: flex; flex-direction: column; gap: 0.5rem; }
+        .slider-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .slider-name { font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .slider-value {
+            font-weight: 700; color: var(--text);
+            padding: 0.1rem 0.55rem; border-radius: 6px;
+            background: var(--btn2-bg); font-size: 0.85rem;
+        }
+        .slider {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 10px; border-radius: 5px;
+            outline: none; cursor: pointer; margin: 0;
+            background: linear-gradient(to right, #22c55e 0%, #84cc16 33%, #eab308 66%, #ef4444 100%);
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: var(--text); border: 3px solid var(--card);
+            cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        .slider::-webkit-slider-thumb:active { transform: scale(1.15); }
+        .slider::-moz-range-thumb {
+            width: 22px; height: 22px; border-radius: 50%;
+            background: var(--text); border: 3px solid var(--card);
+            cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .slider:focus::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3); }
+
+        #source { font-size: 0.85rem; color: var(--muted); line-height: 1.5; word-break: break-word; }
+        #source:empty { display: none; }
+        #source a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+        #source a:hover { color: var(--text); }
+
+        @media (max-width: 600px) {
+            body { padding: 1rem 0.5rem; }
+            .app { padding: 1.5rem 1rem; border-radius: 14px; }
+            h1 { font-size: 1.35rem; }
+            #text-container { font-size: 1rem; padding: 1rem 1.1rem; line-height: 1.9; }
+            button { padding: 0.7rem 1.2rem; font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="header">
+        <div>
+            <h1><span>📰</span> Lückentest</h1>
+            <p class="subtitle">Deutsche Nachrichten · zufälliger Artikel · Wortendungen ergänzen</p>
+        </div>
+        <button id="themeBtn" class="theme-btn" aria-label="Design umschalten">🌙</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="text-container"></div>
+
+    <div class="actions">
+        <button id="checkBtn">✅ Prüfen</button>
+        <button id="newBtn">🔄 Neuer Text</button>
+        <span id="scoreDisplay"></span>
+    </div>
+
+    <div class="sliders">
+        <div class="slider-row">
+            <div class="slider-header">
+                <span class="slider-name">Lückenhäufigkeit</span>
+                <span class="slider-value" id="freqValue">Mittel</span>
+            </div>
+            <input type="range" id="freqSlider" class="slider" min="0" max="3" step="1" value="1">
+        </div>
+        <div class="slider-row">
+            <div class="slider-header">
+                <span class="slider-name">Textlänge</span>
+                <span class="slider-value" id="lengthValue">Mittel</span>
+            </div>
+            <input type="range" id="lengthSlider" class="slider" min="0" max="3" step="1" value="1">
+        </div>
+    </div>
+
+    <div id="source"></div>
+</div>
+
+<script>
+    /* ============================================================
+       KONFIGURATION
+       ============================================================ */
+    const TAGESSCHAU_ARCHIVE = 'https://www.tagesschau.de/archiv?datum=';
+    const TAGESSCHAU_API     = 'https://www.tagesschau.de/api2u';
+    const WIKI_RANDOM_BASE   = 'https://de.wikipedia.org/w/api.php';
+
+    const FETCH_TIMEOUT_MS   = 5000;
+    const ABSOLUTE_MIN_CHARS = 400;
+    const MIN_WORD_LENGTH    = 5;
+
+    // Slider-Stufen
+    const GAP_FREQUENCY_LEVELS = [0.15, 0.30, 0.45, 0.65];
+    const GAP_FREQUENCY_LABELS = ['Leicht', 'Mittel', 'Schwer', 'Hardcore'];
+    const TEXT_LENGTH_LEVELS   = [800, 1400, 2200, 3500];
+    const TEXT_LENGTH_LABELS   = ['Leicht', 'Mittel', 'Schwer', 'Hardcore'];
+
+    let gapFreqLevel    = 1;
+    let textLengthLevel = 1;
+
+    // Anti-Wiederholung
+    const SEEN_STORAGE_KEY = 'lueckentest-seen-urls';
+    const SEEN_MAX = 30;
+
+    /* ============================================================
+       DOM & STATE
+       ============================================================ */
+    const textContainer = document.getElementById('text-container');
+    const statusEl      = document.getElementById('status');
+    const checkBtn      = document.getElementById('checkBtn');
+    const newBtn        = document.getElementById('newBtn');
+    const themeBtn      = document.getElementById('themeBtn');
+    const sourceEl      = document.getElementById('source');
+    const scoreDisplay  = document.getElementById('scoreDisplay');
+    const freqSlider    = document.getElementById('freqSlider');
+    const lengthSlider  = document.getElementById('lengthSlider');
+    const freqValue     = document.getElementById('freqValue');
+    const lengthValue   = document.getElementById('lengthValue');
+
+    let currentGaps = new Map();
+    let isLoading   = false;
+
+    /* ============================================================
+       HILFSFUNKTIONEN
+       ============================================================ */
+    function setStatus(message, type) { statusEl.textContent = message || ''; statusEl.className = type || ''; }
+    function clearStatus() { setStatus('', ''); }
+    function randomElement(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try { return await fetch(url, { ...options, signal: controller.signal }); }
+        finally { clearTimeout(timer); }
+    }
+
+    /* ---------- Seen-URLs ---------- */
+    function loadSeenUrls() {
+        try { return JSON.parse(localStorage.getItem(SEEN_STORAGE_KEY) || '[]'); }
+        catch (e) { return []; }
+    }
+    function isSeen(url) { return url ? loadSeenUrls().includes(url) : true; }
+    function markSeen(url) {
+        if (!url) return;
+        const seen = loadSeenUrls();
+        if (!seen.includes(url)) seen.unshift(url);
+        try { localStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(seen.slice(0, SEEN_MAX))); }
+        catch (e) {}
+    }
+
+    /* ---------- HTML → reiner Text, mit Metadaten-Filter ---------- */
+    function prepareArticleText(html) {
+        let processed = String(html)
+            .replace(/<\/p\s*>/gi,          '\n\n')
+            .replace(/<\/div\s*>/gi,        '\n\n')
+            .replace(/<\/blockquote\s*>/gi, '\n\n')
+            .replace(/<\/h[1-6]\s*>/gi,     '\n\n')
+            .replace(/<br\s*\/?>/gi,        '\n')
+            .replace(/<\/li\s*>/gi,         '\n');
+
+        const doc = new DOMParser().parseFromString(processed, 'text/html');
+        let text = doc.body.textContent || '';
+
+        text = text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                   .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
+                   .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–');
+
+        text = text.replace(/\r\n?/g, '\n')
+                   .replace(/[ \t]+/g, ' ')
+                   .replace(/\n[ \t]+/g, '\n')
+                   .replace(/[ \t]+\n/g, '\n')
+                   .replace(/\n{3,}/g, '\n\n')
+                   .trim();
+
+        // Metadaten-Zeilen entfernen (z. B. "tagesschau.de | ... | 22.10.2026 | 11:04 Uhr")
+        return filterMetadataLines(text);
+    }
+
+    /**
+     * Entfernt Zeilen, die wie Nachrichten-Metadaten aussehen:
+     * - enthalten einen senkrechten Strich "|" UND ein Datum oder eine Uhrzeit
+     * - oder bestehen nur aus Quelle/Datum/Uhrzeit
+     */
+    function filterMetadataLines(text) {
+        const lines = text.split('\n');
+        const dateRe = /\d{1,2}\.\d{1,2}\.\d{4}/;      // 22.10.2026
+        const timeRe = /\d{1,2}:\d{2}/;                 // 11:04
+        const uhrRe  = /\bUhr\b/;                       // "Uhr"
+
+        const cleaned = lines.filter(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return true; // Leerzeilen behalten
+
+            // Enthält die Zeile einen Pipe und ein Datum/eine Uhrzeit?
+            const hasPipe = trimmed.includes('|');
+            const hasDate = dateRe.test(trimmed);
+            const hasTime = timeRe.test(trimmed) || uhrRe.test(trimmed);
+
+            if (hasPipe && (hasDate || hasTime)) return false;
+
+            // Zeile, die fast nur aus Quelle + Datum besteht
+            if (hasDate && hasTime && trimmed.length < 120) return false;
+
+            return true;
+        });
+
+        return cleaned.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    /**
+     * Kürzt an sauberen Grenzen: Absatz → Satzende → Wortgrenze.
+     * Entfernt vorhandene "..." / "…" am Ende.
+     */
+    function truncateArticleText(text, maxLen) {
+        text = text.replace(/\.{2,}\s*$/g, '').replace(/…\s*$/g, '').trim();
+        if (text.length <= maxLen) return text;
+
+        const minPara = Math.floor(maxLen * 0.4);
+        const window_ = text.slice(0, maxLen);
+
+        // 1. Absatzumbruch
+        let bestPara = -1, pos = 0;
+        while ((pos = text.indexOf('\n\n', pos + 1)) !== -1) {
+            if (pos > maxLen) break;
+            if (pos >= minPara) bestPara = pos;
+        }
+        if (bestPara > 0) return text.slice(0, bestPara).trim();
+
+        // 2. Satzende
+        const sentenceRegex = /[.!?](?=\s|$)/g;
+        let lastSent = -1, m;
+        while ((m = sentenceRegex.exec(window_)) !== null) {
+            if (m.index >= minPara) lastSent = m.index + 1;
+        }
+        if (lastSent > 0) return text.slice(0, lastSent).trim();
+
+        // 3. Wortgrenze
+        const lastSpace = window_.lastIndexOf(' ');
+        return lastSpace > 0 ? text.slice(0, lastSpace).trim() : window_.trim();
+    }
+
+    /* ============================================================
+       ARTIKEL LADEN – wirklich zufällig (auch alte Artikel)
+       ============================================================ */
+    async function fetchRandomArticle() {
+        if (isLoading) return;
+        isLoading = true;
+
+        checkBtn.disabled = true;
+        newBtn.disabled = true;
+        textContainer.innerHTML = '';
+        sourceEl.innerHTML = '';
+        scoreDisplay.textContent = '';
+        currentGaps.clear();
+        setStatus('Lade zufälligen Artikel …', 'loading');
+
+        try {
+            const article = await loadRandomArticle();
+            renderLueckentest(article.processedText);
+            showSource(article.url);
+            markSeen(article.url);
+            setStatus('Artikel geladen.', '');
+        } catch (err) {
+            console.error('Alle Quellen fehlgeschlagen:', err);
+            setStatus(`Fehler beim Laden: ${err.message}. Bitte versuche es erneut.`, 'error');
+            textContainer.innerHTML =
+                '<p style="color:var(--muted);font-style:italic;">Kein Text verfügbar. Klicke auf „Neuer Text“.</p>';
+        } finally {
+            isLoading = false;
+            checkBtn.disabled = false;
+            newBtn.disabled = false;
+        }
+    }
+
+    /**
+     * Wählt zufällig zwischen Wikipedia und dem Tagesschau-Archiv.
+     * Beide Quellen liefern auch alte Artikel (2015 oder früher).
+     */
+    async function loadRandomArticle() {
+        const sources = [fetchFromWikipedia, fetchFromTagesschauArchive];
+        const order   = Math.random() < 0.5 ? sources : [sources[1], sources[0]];
+
+        let lastErr;
+        for (const src of order) {
+            try {
+                const article = await src();
+                if (!article) continue;
+
+                const prepared = prepareArticleText(article.text);
+                const targetLen = TEXT_LENGTH_LEVELS[textLengthLevel];
+                const truncated = truncateArticleText(prepared, targetLen);
+
+                if (truncated.length < ABSOLUTE_MIN_CHARS) continue;
+
+                // Bevorzugt ungesehene URLs
+                if (!isSeen(article.url)) {
+                    return { ...article, processedText: truncated };
+                }
+                // Falls alles gesehen ist, trotzdem nehmen (lieber wiederholen als scheitern)
+                lastErr = new Error('Alle frischen Quellen aufgebraucht.');
+            } catch (e) {
+                lastErr = e;
+            }
+        }
+
+        // Zweiter Durchlauf ohne Seen-Filter
+        for (const src of order) {
+            try {
+                const article = await src();
+                if (!article) continue;
+                const prepared = prepareArticleText(article.text);
+                const truncated = truncateArticleText(prepared, TEXT_LENGTH_LEVELS[textLengthLevel]);
+                if (truncated.length >= ABSOLUTE_MIN_CHARS) {
+                    return { ...article, processedText: truncated };
+                }
+            } catch (e) { lastErr = e; }
+        }
+
+        throw lastErr || new Error('Keine Quelle lieferte einen passenden Artikel.');
+    }
+
+    /* ---------- Wikipedia (echt zufällig, alle Jahre) ---------- */
+    async function fetchFromWikipedia() {
+        const exchars = Math.max(4500, TEXT_LENGTH_LEVELS[textLengthLevel] + 1000);
+        const params = new URLSearchParams({
+            action: 'query',
+            generator: 'random',
+            grnnamespace: '0',
+            grnlimit: '1',
+            prop: 'extracts|info',
+            inprop: 'url',
+            explaintext: '1',
+            exchars: String(exchars),
+            format: 'json',
+            origin: '*'
+        });
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const resp = await fetchWithTimeout(`${WIKI_RANDOM_BASE}?${params}`, {}, FETCH_TIMEOUT_MS);
+                if (!resp.ok) continue;
+
+                const data = await resp.json();
+                const pages = data.query?.pages;
+                if (!pages) continue;
+
+                const page = Object.values(pages)[0];
+                if (!page || !page.extract) continue;
+
+                const text = page.extract.trim();
+                if (text.length < ABSOLUTE_MIN_CHARS) continue;
+
+                const url = page.fullurl || `https://de.wikipedia.org/?curid=${page.pageid}`;
+                return { text, url, name: 'Wikipedia' };
+            } catch (e) { /* retry */ }
+        }
+
+        throw new Error('Wikipedia lieferte keinen passenden Artikel.');
+    }
+
+    /* ---------- Tagesschau-Archiv mit zufälligem Datum ---------- */
+    async function fetchFromTagesschauArchive() {
+        // Zufälliges Datum zwischen 2006-01-01 und gestern
+        const start = new Date(2006, 0, 1).getTime();
+        const end   = Date.now() - 24 * 60 * 60 * 1000;
+        const randomDate = new Date(start + Math.random() * (end - start));
+
+        const yyyy = randomDate.getFullYear();
+        const mm   = String(randomDate.getMonth() + 1).padStart(2, '0');
+        const dd   = String(randomDate.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+        const archiveUrl = `${TAGESSCHAU_ARCHIVE}${dateStr}`;
+        const resp = await fetchWithTimeout(archiveUrl, {}, FETCH_TIMEOUT_MS);
+        if (!resp.ok) throw new Error(`Archiv HTTP ${resp.status}`);
+
+        const html = await resp.text();
+        const doc  = new DOMParser().parseFromString(html, 'text/html');
+
+        // Artikel-Links im Archiv finden
+        const links = [];
+        doc.querySelectorAll('a.teaser-right__link, a.teaser__link').forEach(a => {
+            const href = a.getAttribute('href');
+            if (href && href.startsWith('/')) {
+                links.push(href);
+            }
+        });
+
+        if (links.length === 0) {
+            throw new Error('Keine Artikel im Archiv für dieses Datum.');
+        }
+
+        // Zufälligen Artikel auswählen
+        const chosenPath = randomElement(links);
+        const articleUrl = `https://www.tagesschau.de${chosenPath}`;
+        if (isSeen(articleUrl)) {
+            throw new Error('Artikel bereits gesehen.');
+        }
+
+        // Volltext über die API laden
+        const apiUrl = `${TAGESSCHAU_API}${chosenPath.replace(/\.html$/, '')}`;
+        const apiResp = await fetchWithTimeout(apiUrl, {}, FETCH_TIMEOUT_MS);
+        if (!apiResp.ok) throw new Error(`API HTTP ${apiResp.status}`);
+
+        const detail = await apiResp.json();
+        const fullText = extractTagesschauFullText(detail);
+        if (!fullText || fullText.length < ABSOLUTE_MIN_CHARS) {
+            throw new Error('Tagesschau-Artikeltext zu kurz.');
+        }
+
+        return { text: fullText, url: articleUrl, name: 'Tagesschau (Archiv)' };
+    }
+
+    function extractTagesschauFullText(detail) {
+        const paragraphs = [];
+        if (Array.isArray(detail.content)) {
+            for (const block of detail.content) {
+                if (!block) continue;
+                const text = block.value || block.text;
+                if (typeof text === 'string' && text.trim()) paragraphs.push(text.trim());
+            }
+        }
+        if (paragraphs.length === 0 && typeof detail.firstSentence === 'string') {
+            paragraphs.push(detail.firstSentence.trim());
+        }
+        return paragraphs.join('\n\n');
+    }
+
+    /* ============================================================
+       LÜCKENTEST RENDERN
+       ============================================================ */
+    function renderLueckentest(text) {
+        currentGaps.clear();
+        textContainer.innerHTML = '';
+
+        const wordRegex = /([a-zA-ZäöüÄÖÜß]+)/g;
+        let lastIndex = 0, match;
+
+        while ((match = wordRegex.exec(text)) !== null) {
+            const before = text.slice(lastIndex, match.index);
+            if (before) textContainer.appendChild(document.createTextNode(before));
+
+            const word = match[1];
+            lastIndex = match.index + word.length;
+
+            if (shouldBlank(word)) {
+                const gapData = createGap(word);
+                textContainer.appendChild(gapData.element);
+                currentGaps.set(gapData.input, { expected: gapData.expected });
+            } else {
+                textContainer.appendChild(document.createTextNode(word));
+            }
+        }
+
+        const tail = text.slice(lastIndex);
+        if (tail) textContainer.appendChild(document.createTextNode(tail));
+    }
+
+    function shouldBlank(word) {
+        if (word.length < MIN_WORD_LENGTH) return false;
+        if (/^\d+$/.test(word)) return false;           // reine Zahlen
+        if (/\d/.test(word)) return false;               // Zahlen im Wort
+        return Math.random() < GAP_FREQUENCY_LEVELS[gapFreqLevel];
+    }
+
+    function createGap(word) {
+        const stemLength = Math.floor(word.length / 2);
+        const stem   = word.slice(0, stemLength);
+        const suffix = word.slice(stemLength);
+
+        const wrapper = document.createElement('span');
+        wrapper.className = 'luecke';
+
+        const expectedSpan = document.createElement('span');
+        expectedSpan.className = 'expected';
+        expectedSpan.textContent = suffix;
+        expectedSpan.style.display = 'none';
+        wrapper.appendChild(expectedSpan);
+
+        wrapper.appendChild(document.createTextNode(stem));
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.spellcheck = false;
+        input.autocomplete = 'off';
+        input.dataset.expected = suffix;
+        input.style.width = `${Math.max(4, suffix.length + 1)}ch`;
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); checkAnswers(); }
+        });
+
+        wrapper.appendChild(input);
+        return { element: wrapper, input, expected: suffix };
+    }
+
+    /* ============================================================
+       ANTWORTEN PRÜFEN – Ergebnis neben "Neuer Text"
+       ============================================================ */
+    function checkAnswers() {
+        if (currentGaps.size === 0) return;
+        const firstInput = currentGaps.keys().next().value;
+        if (firstInput.disabled) return;
+
+        let correct = 0;
+        const total = currentGaps.size;
+
+        currentGaps.forEach((data, input) => {
+            const userAnswer = input.value.trim();
+            const isCorrect = userAnswer.toLowerCase() === data.expected.toLowerCase();
+
+            input.classList.remove('correct', 'incorrect');
+            input.classList.add(isCorrect ? 'correct' : 'incorrect');
+            if (isCorrect) correct++;
+
+            const expectedSpan = input.parentElement.querySelector('.expected');
+            if (expectedSpan) expectedSpan.style.display = isCorrect ? 'none' : 'block';
+
+            input.disabled = true;
+        });
+
+        checkBtn.disabled = true;
+
+        const pct = Math.round((correct / total) * 100);
+        scoreDisplay.textContent = `${correct}/${total} ${pct}%`;
+    }
+
+    /* ============================================================
+       QUELLE ANZEIGEN
+       ============================================================ */
+    function showSource(url) {
+        sourceEl.innerHTML = '';
+        if (!url) { sourceEl.textContent = 'Quelle: (URL nicht verfügbar)'; return; }
+
+        sourceEl.append('Quelle: ');
+        const a = document.createElement('a');
+        a.href = url;
+        a.textContent = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.title = url;
+        sourceEl.appendChild(a);
+    }
+
+    /* ============================================================
+       SLIDER
+       ============================================================ */
+    freqSlider.addEventListener('input', () => {
+        gapFreqLevel = parseInt(freqSlider.value, 10);
+        freqValue.textContent = GAP_FREQUENCY_LABELS[gapFreqLevel];
+    });
+
+    lengthSlider.addEventListener('input', () => {
+        textLengthLevel = parseInt(lengthSlider.value, 10);
+        lengthValue.textContent = TEXT_LENGTH_LABELS[textLengthLevel];
+    });
+
+    /* ============================================================
+       DARK / LIGHT MODE
+       ============================================================ */
+    const root = document.documentElement;
+    function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        try { localStorage.setItem('lueckentest-theme', theme); } catch (e) {}
+    }
+    const storedTheme = (() => { try { return localStorage.getItem('lueckentest-theme'); } catch (e) { return null; } })();
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(storedTheme || (prefersDark ? 'dark' : 'light'));
+    themeBtn.addEventListener('click', () => {
+        applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+
+    /* ============================================================
+       EVENTS
+       ============================================================ */
+    checkBtn.addEventListener('click', checkAnswers);
+    newBtn.addEventListener('click', () => { clearStatus(); fetchRandomArticle(); });
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); checkAnswers(); }
+    });
+
+    /* ============================================================
+       START
+       ============================================================ */
+    fetchRandomArticle();
+</script>
+
+</body>
+</html>
